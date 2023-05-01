@@ -8,8 +8,8 @@ from pid import PID
 rho_pid = PID(p=0.4, i=0)
 theta_pid = PID(p=0.001, i=0)
 
-roi1 = (20, 0, 40, 60)  # 第一个区域
-roi2 = (0, 25, 80, 10)  # 第二个区域
+roi1 = (0, 0, 80, 60)  # 第一个区域
+roi2 = (0, 10, 80, 20)  # 第二个区域
 
 LED(1).on()
 LED(2).on()
@@ -30,8 +30,8 @@ clock = time.clock()                # to process a frame sometimes.
 while(True):
     clock.tick()
     img = sensor.snapshot().binary([THRESHOLD])
-    line = img.get_regression([(100,100)], robust = True ,roi = roi1)
-    lineH = img.get_regression([(100,100)], robust = True,roi = roi2)
+    line = img.get_regression([(100,100)], robust = True, roi = roi1)
+    lineH = img.get_regression([(100,100)], robust = True, roi = roi2, x_stride = 20)
     if (line):
         rho_err = abs(line.rho())-img.width()/2
         if line.theta()>90:
@@ -47,21 +47,18 @@ while(True):
 
         if line.magnitude()>8: #像素长度8
             # Check for cross or T lines
-            if lineH is not None:
-                lineL = img.get_regression([(100,100)], robust = True ,roi = (20, lineH.y1() - 2, 40, 2))
-            else:
-                lineL = None
-                print("no")
+            #if lineH is not None:
+                #lineL = img.get_regression([(100,100)], robust = True ,roi = (20, lineH.y1() - 2, 40, 2))
+            #else:
+                #lineL = None
+                #print("no")
             #if line is not None and lineH is not None and abs(line.theta()-lineH.theta()) > 70 and lineH.magnitude() > 8 and abs((lineH.y1()+lineH.y2())/2 - line.y1()) > 5:
-            if lineH is not None and lineL is not None and abs(line.theta()-lineH.theta()) > 70 and lineH.magnitude() > 8:
+            if lineH is not None and abs(0-lineH.theta()) > 70 and lineH.magnitude() > 8:
                 img.draw_line(lineH.line(), color = (255,0,0))
                 print("Found cross line!")
                 print(line.y1(),lineH.y1())
-            #if line is not None and lineH is not None and abs(line.theta()-lineH.theta()) > 70 and lineH.magnitude() > 8 and abs((lineH.y1()+lineH.y2())/2 - line.y1()) < 3:
-            elif lineH is not None and lineL is None and abs(line.theta()-lineH.theta()) > 70 and lineH.magnitude() > 8:
-                print("Found T line!")
-                print(line.y1(),lineH.y1())
             else:
+                print("no")
                 rho_output = rho_pid.get_pid(rho_err,1)
                 theta_output = theta_pid.get_pid(theta_err,1)
                 output = rho_output+theta_output
